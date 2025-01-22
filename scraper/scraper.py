@@ -1,6 +1,7 @@
 import requests
 import dotenv
 import os
+import subprocess
 import logging
 from logging.handlers import SysLogHandler
 import platform
@@ -33,14 +34,14 @@ class Scraper:
                 headers=self.auth_header,
             )
             if not response.ok:
-                self.logger.error(f"Failed to get repos for {self.username}")
+                self.logger.error("Failed to get repos")
                 return
 
             repos_dict = response.json()
             for repo in repos_dict:
                 self.repos.append(repo["name"])
 
-            self.logger.info(f"Successfully retrieved repos for {self.username}")
+            self.logger.info("Successfully retrieved repos")
             return
 
         except requests.exceptions.RequestException as e:
@@ -90,6 +91,8 @@ class Scraper:
         except requests.exceptions.RequestException as e:
             self.logger.error(f"RequestException: {e}")
             return
+
+        logging.info("Successfully retrieved last years contributions")
 
     def _parse_level(self, level):
         match level:
@@ -141,23 +144,48 @@ class Scraper:
 
                 contributions += yearly_contributions
 
+                logging.info(f"Successfully retrieved contributions for {year}")
+
             except requests.exceptions.RequestException as e:
                 self.logger.error(f"RequestException: {e}")
                 return
 
     def get_languages(self):
         # language usage: loop "https://api.github.com/repos/{name}/{repo}/languages" and count "bytes" for each languag
-        pass
+        if not self.repos:
+            logging.error("No repos found")
+            return
+
+        languages = {}
+
+        for i, repo in enumerate(self.repos):
+            try:
+                response = requests.get(
+                    f"https://api.github.com/repos/{self.username}/{repo}/languages",
+                    headers=self.auth_header,
+                )
+                if not response.ok:
+                    self.logger.error(f"Failed to get languages for repository {i}")
+                    return
+
+                data = response.json()
+
+                for language, bytes in data.items():
+                    if language in languages:
+                        languages[language] += bytes
+                    else:
+                        languages[language] = bytes
+
+                self.logger.info(f"Successfully retrieved languages for repository {i}")
+
+            except requests.exceptions.RequestException as e:
+                self.logger.error(f"RequestException: {e}")
+                return
+
+            logging.info("Successfully retrieved languages")
 
     def get_lines_pushed(self):
-        # lines pushed:  loop repos, pull each to ../repos/{repo}, count lines in each files recursively
         pass
-
-    def run(self):
-        self.get_repos()
-        self.get_contributions()
-        self.get_languages()
-        self.get_lines_pushed()
 
 
 if __name__ == "__main__":
@@ -167,4 +195,5 @@ if __name__ == "__main__":
     DB = "db"  # will deal with this later
 
     scraper = Scraper(USERNAME, TOKEN, "db")
-    scraper.get_all_contributions()
+    scraper.get_repos()
+    scraper.get_languages()
