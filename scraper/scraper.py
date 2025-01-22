@@ -7,6 +7,38 @@ from logging.handlers import SysLogHandler
 import platform
 from datetime import datetime
 
+ACCEPTABLE_EXTENSIONS = acceptable_extensions = [
+    ".py",
+    ".js",
+    "jsx",
+    ".ts",
+    "tsx",
+    ".html",
+    ".css",
+    ".java",
+    ".c",
+    ".cpp",
+    ".h",
+    ".hpp",
+    ".cs",
+    ".go",
+    ".rb",
+    ".php",
+    ".swift",
+    ".kt",
+    ".rs",
+    ".pl",
+    ".m",
+    ".r",
+    ".lua",
+    ".scala",
+    ".dart",
+    ".groovy",
+    ".tsv",
+    ".md",
+    ".sh",
+]
+
 
 class Scraper:
     def __init__(self, username: str, token: str, db: str):
@@ -185,7 +217,31 @@ class Scraper:
             logging.info("Successfully retrieved languages")
 
     def get_lines_pushed(self):
-        pass
+        repo_path = "./repos/portfolio"
+        if not os.path.exists(repo_path):
+            self.logger.info("Cloning repository")
+            subprocess.run(
+                [
+                    "git",
+                    "clone",
+                    "https://github.com/benceluzsinszky/portfolio.git",
+                    repo_path,
+                ],
+                check=True,
+            )
+        else:
+            self.logger.info("Pulling latest changes")
+            subprocess.run(["git", "-C", repo_path, "pull"], check=True)
+
+        total_lines = 0
+        for root, _, files in os.walk(repo_path):
+            for file in files:
+                if file.endswith(tuple(ACCEPTABLE_EXTENSIONS)):
+                    file_path = os.path.join(root, file)
+                    with open(file_path, "r") as f:
+                        total_lines += sum(1 for _ in f)
+
+        self.logger.info("Total lines of code succesfully collected")
 
 
 if __name__ == "__main__":
@@ -196,4 +252,4 @@ if __name__ == "__main__":
 
     scraper = Scraper(USERNAME, TOKEN, "db")
     scraper.get_repos()
-    scraper.get_languages()
+    scraper.get_lines_pushed()
