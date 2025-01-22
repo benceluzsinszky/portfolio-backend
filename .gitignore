@@ -2,6 +2,7 @@
 node_modules
 queries.pgsql
 repos/
+db.sql
 
 
 # Byte-compiled / optimized / DLL files
