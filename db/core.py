@@ -1,15 +1,16 @@
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 import dotenv
 import os
+from models import Base
 
 dotenv.load_dotenv()
 
-engine = create_engine(os.getenv("DATABASE_URL"))
+engine = create_engine(os.getenv("DATABASE_URL"), echo=True)
 session_local = sessionmaker(
     class_=Session, autocommit=False, autoflush=False, bind=engine
 )
-MetaData().create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 
 # Dependency to get the database session
