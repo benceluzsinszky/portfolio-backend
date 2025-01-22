@@ -1,16 +1,20 @@
 import requests
+import dotenv
+import os
 
 
 class Scraper:
-    def __init__(self, username, db):
+    def __init__(self, username, token, db):
         self.username = username
+        self.auth_header = {"Authorization": f"token {token}"}
         self.db = db
         self.repos = []
 
     def get_repos(self):
         try:
             response = requests.get(
-                f"https://api.github.com/users/{self.username}/repos"
+                f"https://api.github.com/users/{self.username}/repos",
+                headers=self.auth_header,
             )
             if not response.ok:
                 print(f"Failed to get repos for {self.username}")
@@ -45,4 +49,10 @@ class Scraper:
 
 
 if __name__ == "__main__":
-    ...
+    dotenv.load_dotenv()
+    USERNAME = os.getenv("USERNAME")
+    TOKEN = os.getenv("GITHUB_PAT")
+    DB = "db"  # will deal with this later
+
+    scraper = Scraper(USERNAME, TOKEN, "db")
+    scraper.get_repos()
