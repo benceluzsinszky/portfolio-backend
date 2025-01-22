@@ -1,3 +1,6 @@
+import requests
+
+
 class Scraper:
     def __init__(self, username, db):
         self.username = username
@@ -5,15 +8,29 @@ class Scraper:
         self.repos = []
 
     def get_repos(self):
-        # get all repos: "https://api.github.com/users/{name}/repos"
-        pass
+        try:
+            response = requests.get(
+                f"https://api.github.com/users/{self.username}/repos"
+            )
+            if not response.ok:
+                print(f"Failed to get repos for {self.username}")
+                return
+
+            repos_dict = response.json()
+            for repo in repos_dict:
+                self.repos.append(repo["name"])
+            return
+
+        except requests.exceptions.RequestException as e:
+            print(e)
+            return
 
     def get_contributions(self):
         # contributions: loop "https://api.github.com/repos/{name}/{repo}/contributors" and count "contributions"
         pass
 
     def get_languages(self):
-        # language usage: loop "https://api.github.com/repos/{name}/{repo}/languages" and count "bytes" for each language
+        # language usage: loop "https://api.github.com/repos/{name}/{repo}/languages" and count "bytes" for each languag
         pass
 
     def get_lines_pushed(self):
