@@ -284,6 +284,13 @@ class Scraper:
             session.commit()
             logging.info("Successfully saved total lines to database")
 
+    def run(self):
+        self.get_repos()
+        self.get_last_year_contributions()
+        self.get_total_contributions()
+        self.get_language_usage()
+        self.get_total_lines()
+
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
@@ -292,5 +299,4 @@ if __name__ == "__main__":
 
     db_session = next(get_db())
     scraper = Scraper(username=USERNAME, token=TOKEN, db=db_session)
-    scraper.get_repos()
-    scraper.get_lines_pushed()
+    scraper.run()
