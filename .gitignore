@@ -1,6 +1,7 @@
 .vscode
 node_modules
 queries.pgsql
+repos/
 
 
 # Byte-compiled / optimized / DLL files
