@@ -250,31 +250,39 @@ class Scraper:
             logging.info("Successfully saved languages to database")
 
     def get_lines_pushed(self):
-        repo_path = "./repos/portfolio"
-        if not os.path.exists(repo_path):
-            self.logger.info("Cloning repository")
-            subprocess.run(
-                [
-                    "git",
-                    "clone",
-                    "https://github.com/benceluzsinszky/portfolio.git",
-                    repo_path,
-                ],
-                check=True,
-            )
-        else:
-            self.logger.info("Pulling latest changes")
-            subprocess.run(["git", "-C", repo_path, "pull"], check=True)
-
         total_lines = 0
-        for root, _, files in os.walk(repo_path):
-            for file in files:
-                if file.endswith(tuple(ACCEPTABLE_EXTENSIONS)):
-                    file_path = os.path.join(root, file)
-                    with open(file_path, "r") as f:
-                        total_lines += sum(1 for _ in f)
+        for i, repo in enumerate(self.repos):
+            repo_path = f"./repos/{repo}"
+            if not os.path.exists(repo_path):
+                self.logger.info("Cloning repository")
+                subprocess.run(
+                    [
+                        "git",
+                        "clone",
+                        "https://github.com/benceluzsinszky/portfolio.git",
+                        repo_path,
+                    ],
+                    check=True,
+                )
+            else:
+                self.logger.info("Pulling latest changes")
+                subprocess.run(["git", "-C", repo_path, "pull"], check=True)
 
-        self.logger.info("Total lines of code succesfully collected")
+            for root, _, files in os.walk(repo_path):
+                for file in files:
+                    if file.endswith(tuple(ACCEPTABLE_EXTENSIONS)):
+                        file_path = os.path.join(root, file)
+                        with open(file_path, "r") as f:
+                            total_lines += sum(1 for _ in f)
+
+            self.logger.info(f"Total lines retrieced for repository {i}")
+
+        with self.session as session:
+            session.query(TotalLines).delete()
+            total_lines = TotalLines(total_lines=total_lines)
+            session.add(total_lines)
+            session.commit()
+            logging.info("Successfully saved total lines to database")
 
 
 if __name__ == "__main__":
@@ -285,4 +293,4 @@ if __name__ == "__main__":
     db_session = next(get_db())
     scraper = Scraper(username=USERNAME, token=TOKEN, db=db_session)
     scraper.get_repos()
-    scraper.get_last_year_contributions()
+    scraper.get_lines_pushed()
