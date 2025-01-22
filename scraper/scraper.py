@@ -120,19 +120,29 @@ class Scraper:
             response_calendar = data["data"]["user"]["contributionsCollection"][
                 "contributionCalendar"
             ]
-            calendar = {}
+            calendar = []
             for week in response_calendar["weeks"]:
                 for day in week["contributionDays"]:
                     level = self._parse_level(day["contributionLevel"])
-                    date = day["date"]
+                    date = datetime.strptime(day["date"], "%Y-%m-%d")
                     count = day["contributionCount"]
-                    calendar[date] = {"level": level, "count": count}
+                    calendar.append({"date": date, "level": level, "count": count})
 
         except requests.exceptions.RequestException as e:
             self.logger.error(f"RequestException: {e}")
             return
 
         logging.info("Successfully retrieved last years contributions")
+
+        with self.session as session:
+            session.query(LastYearContributions).delete()
+            for day in calendar:
+                last_year_contributions = LastYearContributions(
+                    date=day["date"], count=day["count"], level=day["level"]
+                )
+                session.add(last_year_contributions)
+            session.commit()
+            logging.info("Successfully saved last year contributions to database")
 
     def _parse_level(self, level):
         match level:
@@ -275,4 +285,4 @@ if __name__ == "__main__":
     db_session = next(get_db())
     scraper = Scraper(username=USERNAME, token=TOKEN, db=db_session)
     scraper.get_repos()
-    scraper.get_language_usage()
+    scraper.get_last_year_contributions()
