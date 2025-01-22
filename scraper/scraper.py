@@ -158,7 +158,7 @@ class Scraper:
                 return 4
         return 0
 
-    def get_all_contributions(self):
+    def get_total_contributions(self):
         contributions = 0
         this_year = datetime.now().year
         for year in range(2022, this_year + 1):
@@ -249,7 +249,7 @@ class Scraper:
             session.commit()
             logging.info("Successfully saved languages to database")
 
-    def get_lines_pushed(self):
+    def get_total_lines(self):
         total_lines = 0
         for i, repo in enumerate(self.repos):
             repo_path = f"./repos/{repo}"
