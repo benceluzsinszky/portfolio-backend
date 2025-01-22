@@ -7,7 +7,7 @@ class Base(DeclarativeBase):
     pass
 
 
-class LastYearContributions(Base):
+class DBLastYearContributions(Base):
     __tablename__ = "last_year_contributions"
 
     id = Column(Integer, primary_key=True)
@@ -16,22 +16,16 @@ class LastYearContributions(Base):
     level = Column(Integer)
     date_created = Column(DateTime, default=datetime.now)
 
-    def __repr__(self):
-        return f"<LastYearContributions(last_year_contributions={self.last_year_contributions}, date={self.date})>"
 
-
-class TotalContributions(Base):
+class DBTotalContributions(Base):
     __tablename__ = "total_contributions"
 
     id = Column(Integer, primary_key=True)
     total_contributions = Column(Integer)
     date_created = Column(DateTime, default=datetime.now)
 
-    def __repr__(self):
-        return f"<TotalContributions(total_contributions={self.total_contributions}, date={self.date})>"
 
-
-class LanguageUsage(Base):
+class DBLanguageUsage(Base):
     __tablename__ = "language_usage"
 
     id = Column(Integer, primary_key=True)
@@ -39,16 +33,10 @@ class LanguageUsage(Base):
     count = Column(Integer)
     date_created = Column(DateTime, default=datetime.now)
 
-    def __repr__(self):
-        return f"<LanguageUsage(language={self.language}, count={self.count}, date={self.date})>"
 
-
-class TotalLines(Base):
+class DBTotalLines(Base):
     __tablename__ = "total_lines"
 
     id = Column(Integer, primary_key=True)
     total_lines = Column(Integer)
     date_created = Column(DateTime, default=datetime.now)
-
-    def __repr__(self):
-        return f"<TotalLines(total_lines={self.total_lines}, date={self.date})>"

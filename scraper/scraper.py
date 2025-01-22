@@ -8,10 +8,10 @@ import platform
 from datetime import datetime
 from db.core import get_db
 from db.models import (
-    TotalContributions,
-    LanguageUsage,
-    TotalLines,
-    LastYearContributions,
+    DBTotalContributions,
+    DBLanguageUsage,
+    DBTotalLines,
+    DBLastYearContributions,
 )
 from sqlalchemy.orm import Session
 
@@ -135,9 +135,9 @@ class Scraper:
         logging.info("Successfully retrieved last years contributions")
 
         with self.session as session:
-            session.query(LastYearContributions).delete()
+            session.query(DBLastYearContributions).delete()
             for day in calendar:
-                last_year_contributions = LastYearContributions(
+                last_year_contributions = DBLastYearContributions(
                     date=day["date"], count=day["count"], level=day["level"]
                 )
                 session.add(last_year_contributions)
@@ -201,8 +201,10 @@ class Scraper:
                 return
 
         with self.session as session:
-            session.query(TotalContributions).delete()
-            total_contributions = TotalContributions(total_contributions=contributions)
+            session.query(DBTotalContributions).delete()
+            total_contributions = DBTotalContributions(
+                total_contributions=contributions
+            )
             session.add(total_contributions)
             session.commit()
             logging.info("Successfully saved total contributions to database")
@@ -241,10 +243,10 @@ class Scraper:
         logging.info("Successfully retrieved languages")
 
         with self.session as session:
-            session.query(LanguageUsage).delete()
+            session.query(DBLanguageUsage).delete()
 
             for language, count in languages.items():
-                language_usage = LanguageUsage(language=language, count=count)
+                language_usage = DBLanguageUsage(language=language, count=count)
                 session.add(language_usage)
             session.commit()
             logging.info("Successfully saved languages to database")
@@ -278,8 +280,8 @@ class Scraper:
             self.logger.info(f"Total lines retrieced for repository {i}")
 
         with self.session as session:
-            session.query(TotalLines).delete()
-            total_lines = TotalLines(total_lines=total_lines)
+            session.query(DBTotalLines).delete()
+            total_lines = DBTotalLines(total_lines=total_lines)
             session.add(total_lines)
             session.commit()
             logging.info("Successfully saved total lines to database")
