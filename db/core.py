@@ -6,7 +6,7 @@ from db.models import Base
 
 dotenv.load_dotenv()
 
-engine = create_engine(os.getenv("DATABASE_URL"), echo=True)
+engine = create_engine(os.getenv("DATABASE_URL"))
 session_local = sessionmaker(
     class_=Session, autocommit=False, autoflush=False, bind=engine
 )
