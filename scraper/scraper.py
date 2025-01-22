@@ -6,6 +6,15 @@ import logging
 from logging.handlers import SysLogHandler
 import platform
 from datetime import datetime
+from db.core import get_db
+from db.models import (
+    TotalContributions,
+    LanguageUsage,
+    TotalLines,
+    LastYearContributions,
+)
+from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import UnmappedInstanceError
 
 ACCEPTABLE_EXTENSIONS = acceptable_extensions = [
     ".py",
@@ -41,10 +50,10 @@ ACCEPTABLE_EXTENSIONS = acceptable_extensions = [
 
 
 class Scraper:
-    def __init__(self, username: str, token: str, db: str):
+    def __init__(self, username: str, token: str, db: Session):
         self.username = username
         self.auth_header = {"Authorization": f"token {token}"}
-        self.db = db
+        self.session = db
         self.repos = []
 
         self.logger = logging.getLogger("ScraperLogger")
@@ -182,8 +191,14 @@ class Scraper:
                 self.logger.error(f"RequestException: {e}")
                 return
 
-    def get_languages(self):
-        # language usage: loop "https://api.github.com/repos/{name}/{repo}/languages" and count "bytes" for each languag
+        with self.session as session:
+            session.query(TotalContributions).delete()
+            total_contributions = TotalContributions(total_contributions=contributions)
+            session.add(total_contributions)
+            session.commit()
+            logging.info("Successfully saved total contributions to database")
+
+    def get_language_usage(self):
         if not self.repos:
             logging.error("No repos found")
             return
@@ -214,7 +229,16 @@ class Scraper:
                 self.logger.error(f"RequestException: {e}")
                 return
 
-            logging.info("Successfully retrieved languages")
+        logging.info("Successfully retrieved languages")
+
+        with self.session as session:
+            session.query(LanguageUsage).delete()
+
+            for language, count in languages.items():
+                language_usage = LanguageUsage(language=language, count=count)
+                session.add(language_usage)
+            session.commit()
+            logging.info("Successfully saved languages to database")
 
     def get_lines_pushed(self):
         repo_path = "./repos/portfolio"
@@ -248,8 +272,8 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
     USERNAME = os.getenv("USERNAME")
     TOKEN = os.getenv("GITHUB_PAT")
-    DB = "db"  # will deal with this later
 
-    scraper = Scraper(USERNAME, TOKEN, "db")
+    db_session = next(get_db())
+    scraper = Scraper(username=USERNAME, token=TOKEN, db=db_session)
     scraper.get_repos()
-    scraper.get_lines_pushed()
+    scraper.get_language_usage()
