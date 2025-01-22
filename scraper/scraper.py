@@ -14,7 +14,6 @@ from db.models import (
     LastYearContributions,
 )
 from sqlalchemy.orm import Session
-from sqlalchemy.orm.exc import UnmappedInstanceError
 
 ACCEPTABLE_EXTENSIONS = acceptable_extensions = [
     ".py",
