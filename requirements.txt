@@ -4,5 +4,6 @@ requests
 python-dotenv
 fastapi
 fastapi[standard]
+slowapi
 pydantic
 gunicorn
