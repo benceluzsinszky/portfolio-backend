@@ -1,14 +1,13 @@
 # Portfolio Backend
 
-This is the backend for my portfolio website.
 The aim of the project is to provide data that is visualized on my [portfolio website](https://benceluzsinszky.com).
 
 The frontend is written in React TypeScript and can be found [here](https://github.com/benceluzsinszky/portfolio).
 
 The backend consists of two parts:
 
-1. A DataCrawler that fetches data from various sources and stores it in a database
-2. A RESTful API built with FastAPI
+1. **DataCrawler** that fetches data from GitHub and stores it in a database
+2. **RESTful API** built with FastAPI
 
 ## Installation
 
