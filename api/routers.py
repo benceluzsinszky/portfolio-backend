@@ -20,19 +20,27 @@ from api.limiter import limiter
 router = APIRouter()
 
 
-@router.get("/contributions")
+@router.get("/last_year_contributions")
 @limiter.limit("10/minute")
-async def get_contributions(
+async def get_last_year_contributions(
     request: Request, last: bool | None = None, db: Session = Depends(get_db)
-) -> list[LastYearContributions] | list[TotalContributions]:
-    print(last)
+) -> list[LastYearContributions]:
     try:
-        if last:
-            contributions = get_db_last_year_contributions(db)
-            return contributions
-        else:
-            contributions = get_db_total_contributions(db)
-            return contributions
+        contributions = get_db_last_year_contributions(db)
+        return contributions
+
+    except NoResultFound:
+        raise HTTPException(status_code=204, detail="No contributions in DB")
+
+
+@router.get("/total_contributions")
+@limiter.limit("10/minute")
+async def get_total_contributions(
+    request: Request, last: bool | None = None, db: Session = Depends(get_db)
+) -> TotalContributions:
+    try:
+        contributions = get_db_total_contributions(db)
+        return contributions
 
     except NoResultFound:
         raise HTTPException(status_code=204, detail="No contributions in DB")
@@ -43,12 +51,12 @@ async def get_contributions(
 async def get_language_usage(
     request: Request, db: Session = Depends(get_db)
 ) -> list[LanguageUsage]:
-    language_usage = get_db_language_usage(db)
-    print(language_usage)
-    if not language_usage:
-        raise HTTPException(status_code=204, detail="No language usage in DB")
+    try:
+        language_usage = get_db_language_usage(db)
+        return language_usage
 
-    return language_usage
+    except NoResultFound:
+        raise HTTPException(status_code=204, detail="No contributions in DB")
 
 
 @router.get("/total_lines")
@@ -56,8 +64,9 @@ async def get_language_usage(
 async def get_total_lines(
     request: Request, db: Session = Depends(get_db)
 ) -> TotalLines:
-    total_lines = get_db_total_lines(db)
-    if not total_lines:
-        raise HTTPException(status_code=204, detail="No total lines in DB")
+    try:
+        total_lines = get_db_total_lines(db)
+        return total_lines
 
-    return total_lines
+    except NoResultFound:
+        raise HTTPException(status_code=204, detail="No contributions in DB")
