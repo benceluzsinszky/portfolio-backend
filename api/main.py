@@ -4,9 +4,23 @@ from api.limiter import limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 from api.auth import get_api_key
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI(dependencies=[Depends(get_api_key)])
+
+origins = [
+    "http://localhost:5137",
+    "https://benceluzsinszky.com",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.state.limiter = limiter
 app.include_router(router)
