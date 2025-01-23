@@ -29,6 +29,8 @@ The DataCrawler fetches 4 types of data from GitHub:
 The contributions are fetched from the GitHub GraphQL API.
 The language usage and total lines are fetched from the GitHub REST API.
 
+The DataCrawler is deployed as a cron job on a VM and runs every hour.
+
 ### API
 
 The API provides 4 endpoints:
