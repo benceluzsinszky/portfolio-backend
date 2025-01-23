@@ -1,11 +1,12 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from api.routers import router
 from api.limiter import limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
+from api.auth import get_api_key
 
 
-app = FastAPI()
+app = FastAPI(dependencies=[Depends(get_api_key)])
 
 app.state.limiter = limiter
 app.include_router(router)
