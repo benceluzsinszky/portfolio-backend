@@ -7,6 +7,7 @@ RUN pip install -r requirements.txt
 
 COPY ./api /app/api
 COPY ./db /app/db
+COPY .env /app
 
 EXPOSE 8000
 
