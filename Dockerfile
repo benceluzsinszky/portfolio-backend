@@ -5,8 +5,8 @@ WORKDIR /app
 COPY ./requirements.txt /app
 RUN pip install -r requirements.txt
 
-COPY ./api /app
-COPY ./db /app
+COPY ./api /app/api
+COPY ./db /app/db
 
 EXPOSE 8000
 
