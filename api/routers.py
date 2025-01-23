@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import Session
 from db.core import get_db
@@ -14,14 +14,16 @@ from api.models import (
     LanguageUsage,
     TotalLines,
 )
+from api.limiter import limiter
 
 
 router = APIRouter()
 
 
 @router.get("/contributions")
+@limiter.limit("10/minute")
 async def get_contributions(
-    last: bool | None = None, db: Session = Depends(get_db)
+    request: Request, last: bool | None = None, db: Session = Depends(get_db)
 ) -> list[LastYearContributions] | list[TotalContributions]:
     print(last)
     try:
@@ -37,7 +39,10 @@ async def get_contributions(
 
 
 @router.get("/language_usage")
-async def get_language_usage(db: Session = Depends(get_db)) -> list[LanguageUsage]:
+@limiter.limit("10/minute")
+async def get_language_usage(
+    request: Request, db: Session = Depends(get_db)
+) -> list[LanguageUsage]:
     language_usage = get_db_language_usage(db)
     print(language_usage)
     if not language_usage:
@@ -47,7 +52,10 @@ async def get_language_usage(db: Session = Depends(get_db)) -> list[LanguageUsag
 
 
 @router.get("/total_lines")
-async def get_total_lines(db: Session = Depends(get_db)) -> TotalLines:
+@limiter.limit("10/minute")
+async def get_total_lines(
+    request: Request, db: Session = Depends(get_db)
+) -> TotalLines:
     total_lines = get_db_total_lines(db)
     if not total_lines:
         raise HTTPException(status_code=204, detail="No total lines in DB")
