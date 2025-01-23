@@ -8,4 +8,6 @@ RUN pip install -r requirements.txt
 COPY ./api /app
 COPY ./db /app
 
-CMD ["fastapi", "run", "--workers=4", "main", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8000
+
+CMD ["fastapi", "run", "--workers=4", "api/main.py", "--host", "0.0.0.0", "--port", "8000"]
