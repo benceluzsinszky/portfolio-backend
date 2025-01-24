@@ -89,6 +89,35 @@ class Crawler:
             self.logger.error(f"RequestException: {e}")
             return
 
+    def _fetch_last_year_contributions(self):
+        query = f"""
+                query {{
+                    user(login: "{self.username}") {{
+                        name
+                        contributionsCollection {{
+                            contributionCalendar {{
+                                totalContributions
+                                weeks {{
+                                    contributionDays {{
+                                        date
+                                        contributionLevel
+                                        contributionCount
+                                    }}
+                                    firstDay
+                                }}
+                            }}
+                        }}
+                    }}
+                }}
+                """
+        response = requests.post(
+            "https://api.github.com/graphql",
+            headers=self.auth_header,
+            json={"query": query},
+        )
+        data = response.json()
+        return data["data"]["user"]["contributionsCollection"]["contributionCalendar"]
+
     def _parse_level(self, level):
         match level:
             case "NONE":
@@ -103,48 +132,25 @@ class Crawler:
                 return 4
         return 0
 
+    def _parse_calendar(self, response_calendar):
+        calendar = []
+        for week in response_calendar["weeks"]:
+            for day in week["contributionDays"]:
+                level = self._parse_level(day["contributionLevel"])
+                date = datetime.strptime(day["date"], "%Y-%m-%d")
+                count = day["contributionCount"]
+                calendar.append({"date": date, "level": level, "count": count})
+        return calendar
+
     def get_last_year_contributions(self):
         try:
-            query = f"""
-                    query {{
-                        user(login: "{self.username}") {{
-                            name
-                            contributionsCollection {{
-                                contributionCalendar {{
-                                    totalContributions
-                                    weeks {{
-                                        contributionDays {{
-                                            date
-                                            contributionLevel
-                                            contributionCount
-                                        }}
-                                        firstDay
-                                    }}
-                                }}
-                            }}
-                        }}
-                    }}
-                    """
-            response = requests.post(
-                "https://api.github.com/graphql",
-                headers=self.auth_header,
-                json={"query": query},
-            )
-            data = response.json()
-            response_calendar = data["data"]["user"]["contributionsCollection"][
-                "contributionCalendar"
-            ]
-            calendar = []
-            for week in response_calendar["weeks"]:
-                for day in week["contributionDays"]:
-                    level = self._parse_level(day["contributionLevel"])
-                    date = datetime.strptime(day["date"], "%Y-%m-%d")
-                    count = day["contributionCount"]
-                    calendar.append({"date": date, "level": level, "count": count})
+            response_calendar = self._fetch_last_year_contributions()
 
         except requests.exceptions.RequestException as e:
             self.logger.error(f"RequestException: {e}")
             return
+
+        calendar = self._parse_calendar(response_calendar)
 
         self.logger.info("Successfully retrieved last years contributions")
 
