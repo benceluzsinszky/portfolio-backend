@@ -75,6 +75,7 @@ class Crawler:
         )
         if not response.ok:
             self.logger.error("Failed to get repos")
+            raise requests.exceptions.RequestException(response.text)
 
         return response.json()
 
@@ -206,6 +207,10 @@ class Crawler:
 
             self.logger.info(f"Successfully retrieved contributions for {year}")
 
+        if contributions == 0:
+            self.logger.error("No contributions found")
+            return
+
         with self.session as session:
             session.query(DBTotalContributions).delete()
             total_contributions = DBTotalContributions(
@@ -282,19 +287,19 @@ class Crawler:
         self.logger.info("Pulling latest changes")
         subprocess.run(["git", "-C", repo_path, "pull"], check=True)
 
-    def _walk_files(self, repo):
-        for root, _, files in os.walk(f"./repos/{repo}"):
-            for file in files:
-                if file.endswith(tuple(ACCEPTABLE_EXTENSIONS)):
-                    file_path = os.path.join(root, file)
-                    self._count_lines(file_path)
-
     def _count_lines(self, file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             try:
                 self.total_lines += sum(1 for _ in f)
             except Exception as e:
                 self.logger.error(f"Failed to read file {file_path}: {str(e)}")
+
+    def _walk_files(self, repo):
+        for root, _, files in os.walk(f"./repos/{repo}"):
+            for file in files:
+                if file.endswith(tuple(ACCEPTABLE_EXTENSIONS)):
+                    file_path = os.path.join(root, file)
+                    self._count_lines(file_path)
 
     def get_total_lines(self):
         for i, repo in enumerate(self.repos):
