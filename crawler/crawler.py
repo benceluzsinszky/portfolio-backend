@@ -132,7 +132,7 @@ class Crawler:
             self.logger.error(f"RequestException: {e}")
             return
 
-        logging.info("Successfully retrieved last years contributions")
+        self.logger.info("Successfully retrieved last years contributions")
 
         with self.session as session:
             session.query(DBLastYearContributions).delete()
@@ -142,7 +142,7 @@ class Crawler:
                 )
                 session.add(last_year_contributions)
             session.commit()
-            logging.info("Successfully saved last year contributions to database")
+            self.logger.info("Successfully saved last year contributions to database")
 
     def _parse_level(self, level):
         match level:
@@ -194,7 +194,7 @@ class Crawler:
 
                 contributions += yearly_contributions
 
-                logging.info(f"Successfully retrieved contributions for {year}")
+                self.logger.info(f"Successfully retrieved contributions for {year}")
 
             except requests.exceptions.RequestException as e:
                 self.logger.error(f"RequestException: {e}")
@@ -207,11 +207,11 @@ class Crawler:
             )
             session.add(total_contributions)
             session.commit()
-            logging.info("Successfully saved total contributions to database")
+            self.logger.info("Successfully saved total contributions to database")
 
     def get_language_usage(self):
         if not self.repos:
-            logging.error("No repos found")
+            self.logger.error("No repos found")
             return
 
         languages = {}
@@ -240,7 +240,7 @@ class Crawler:
                 self.logger.error(f"RequestException: {e}")
                 return
 
-        logging.info("Successfully retrieved languages")
+        self.logger.info("Successfully retrieved languages")
 
         with self.session as session:
             session.query(DBLanguageUsage).delete()
@@ -249,7 +249,7 @@ class Crawler:
                 language_usage = DBLanguageUsage(language=language, count=count)
                 session.add(language_usage)
             session.commit()
-            logging.info("Successfully saved languages to database")
+            self.logger.info("Successfully saved languages to database")
 
     def get_total_lines(self):
         total_lines = 0
@@ -284,14 +284,16 @@ class Crawler:
             total_lines = DBTotalLines(total_lines=total_lines)
             session.add(total_lines)
             session.commit()
-            logging.info("Successfully saved total lines to database")
+            self.logger.info("Successfully saved total lines to database")
 
     def run(self):
+        self.logger.info("Starting crawler")
         self.get_repos()
         self.get_last_year_contributions()
         self.get_total_contributions()
         self.get_language_usage()
         self.get_total_lines()
+        self.logger.info("Crawler finished")
 
 
 if __name__ == "__main__":
