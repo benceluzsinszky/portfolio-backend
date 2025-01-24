@@ -68,26 +68,28 @@ class Crawler:
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
+    def _fetch_repos(self):
+        response = requests.get(
+            f"https://api.github.com/users/{self.username}/repos",
+            headers=self.auth_header,
+        )
+        if not response.ok:
+            self.logger.error("Failed to get repos")
+
+        return response.json()
+
     def get_repos(self):
         try:
-            response = requests.get(
-                f"https://api.github.com/users/{self.username}/repos",
-                headers=self.auth_header,
-            )
-            if not response.ok:
-                self.logger.error("Failed to get repos")
-                return
-
-            repos_dict = response.json()
-            for repo in repos_dict:
-                self.repos.append(repo["name"])
-
-            self.logger.info("Successfully retrieved repos")
-            return
+            repos_dict = self._fetch_repos()
 
         except requests.exceptions.RequestException as e:
             self.logger.error(f"RequestException: {e}")
             return
+
+        for repo in repos_dict:
+            self.repos.append(repo["name"])
+
+        self.logger.info("Successfully retrieved repos")
 
     def _fetch_last_year_contributions(self):
         query = f"""
