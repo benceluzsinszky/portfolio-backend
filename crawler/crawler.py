@@ -54,6 +54,7 @@ class Crawler:
         self.auth_header = {"Authorization": f"token {token}"}
         self.session = db
         self.repos = []
+        self.total_lines = 0
 
         self.logger = logging.getLogger("CrawlerLogger")
         self.logger.setLevel(logging.INFO)
@@ -251,37 +252,52 @@ class Crawler:
             session.commit()
             self.logger.info("Successfully saved languages to database")
 
+    def _clone_repo(self, repo, i):
+        repo_path = f"./repos/{repo}"
+        self.logger.info(f"Cloning repository {i}")
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                f"https://github.com/{self.username}/{repo}",
+                repo_path,
+            ],
+            check=True,
+        )
+
+    def _pull_repo(self, repo_path):
+        self.logger.info("Pulling latest changes")
+        subprocess.run(["git", "-C", repo_path, "pull"], check=True)
+
+    def _walk_files(self, repo):
+        for root, _, files in os.walk(f"./repos/{repo}"):
+            for file in files:
+                if file.endswith(tuple(ACCEPTABLE_EXTENSIONS)):
+                    file_path = os.path.join(root, file)
+                    self._count_lines(file_path)
+
+    def _count_lines(self, file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            try:
+                self.total_lines += sum(1 for _ in f)
+            except Exception as e:
+                self.logger.error(f"Failed to read file {file_path}: {str(e)}")
+
     def get_total_lines(self):
-        total_lines = 0
         for i, repo in enumerate(self.repos):
             repo_path = f"./repos/{repo}"
             if not os.path.exists(repo_path):
-                self.logger.info("Cloning repository")
-                subprocess.run(
-                    [
-                        "git",
-                        "clone",
-                        "https://github.com/benceluzsinszky/portfolio.git",
-                        repo_path,
-                    ],
-                    check=True,
-                )
+                self._clone_repo(repo, i)
             else:
-                self.logger.info("Pulling latest changes")
-                subprocess.run(["git", "-C", repo_path, "pull"], check=True)
+                self._pull_repo(repo_path)
 
-            for root, _, files in os.walk(repo_path):
-                for file in files:
-                    if file.endswith(tuple(ACCEPTABLE_EXTENSIONS)):
-                        file_path = os.path.join(root, file)
-                        with open(file_path, "r") as f:
-                            total_lines += sum(1 for _ in f)
+            self._walk_files(repo)
 
-            self.logger.info(f"Total lines retrieced for repository {i}")
+            self.logger.info(f"Successfully counted total lines for repository {i}")
 
         with self.session as session:
             session.query(DBTotalLines).delete()
-            total_lines = DBTotalLines(total_lines=total_lines)
+            total_lines = DBTotalLines(total_lines=self.total_lines)
             session.add(total_lines)
             session.commit()
             self.logger.info("Successfully saved total lines to database")
