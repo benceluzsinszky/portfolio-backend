@@ -198,7 +198,7 @@ class Crawler:
                 self.logger.info(f"Successfully retrieved contributions for {year}")
 
             except requests.exceptions.RequestException as e:
-                self.logger.error(f"RequestException: {e}")
+                self.logger.error(f"RequestException: {str(e)}")
                 return
 
         with self.session as session:
@@ -210,6 +210,26 @@ class Crawler:
             session.commit()
             self.logger.info("Successfully saved total contributions to database")
 
+    def _get_repo_languages(self, repo):
+        response = requests.get(
+            f"https://api.github.com/repos/{self.username}/{repo}/languages",
+            headers=self.auth_header,
+        )
+        if not response.ok:
+            self.logger.error(f"Failed to get languages for repository {repo}")
+            return
+
+        return response.json()
+
+    def _parse_languages(self, languages, repo_languages):
+        for language, bytes in repo_languages.items():
+            if language in languages:
+                languages[language] += bytes
+            else:
+                languages[language] = bytes
+
+        return languages
+
     def get_language_usage(self):
         if not self.repos:
             self.logger.error("No repos found")
@@ -219,27 +239,15 @@ class Crawler:
 
         for i, repo in enumerate(self.repos):
             try:
-                response = requests.get(
-                    f"https://api.github.com/repos/{self.username}/{repo}/languages",
-                    headers=self.auth_header,
-                )
-                if not response.ok:
-                    self.logger.error(f"Failed to get languages for repository {i}")
-                    return
-
-                data = response.json()
-
-                for language, bytes in data.items():
-                    if language in languages:
-                        languages[language] += bytes
-                    else:
-                        languages[language] = bytes
-
-                self.logger.info(f"Successfully retrieved languages for repository {i}")
+                repo_languages = self._get_repo_languages(repo)
 
             except requests.exceptions.RequestException as e:
-                self.logger.error(f"RequestException: {e}")
-                return
+                self.logger.error(f"RequestException: {str(e)}")
+                continue
+
+            languages = self._parse_languages(languages, repo_languages)
+
+            self.logger.info(f"Successfully retrieved languages for repository {i}")
 
         self.logger.info("Successfully retrieved languages")
 
