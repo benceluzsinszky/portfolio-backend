@@ -89,6 +89,20 @@ class Crawler:
             self.logger.error(f"RequestException: {e}")
             return
 
+    def _parse_level(self, level):
+        match level:
+            case "NONE":
+                return 0
+            case "FIRST_QUARTILE":
+                return 1
+            case "SECOND_QUARTILE":
+                return 2
+            case "THIRD_QUARTILE":
+                return 3
+            case "FOURTH_QUARTILE":
+                return 4
+        return 0
+
     def get_last_year_contributions(self):
         try:
             query = f"""
@@ -97,7 +111,6 @@ class Crawler:
                             name
                             contributionsCollection {{
                                 contributionCalendar {{
-                                    colors
                                     totalContributions
                                     weeks {{
                                         contributionDays {{
@@ -145,26 +158,8 @@ class Crawler:
             session.commit()
             self.logger.info("Successfully saved last year contributions to database")
 
-    def _parse_level(self, level):
-        match level:
-            case "NONE":
-                return 0
-            case "FIRST_QUARTILE":
-                return 1
-            case "SECOND_QUARTILE":
-                return 2
-            case "THIRD_QUARTILE":
-                return 3
-            case "FOURTH_QUARTILE":
-                return 4
-        return 0
-
-    def get_total_contributions(self):
-        contributions = 0
-        this_year = datetime.now().year
-        for year in range(2022, this_year + 1):
-            try:
-                query = f"""
+    def _fetch_yearly_contributions(self, year):
+        query = f"""
                     query {{
                         user(login: "{self.username}") {{
                             contributionsCollection(to: "{year}-12-31T00:00:00Z") {{
@@ -176,30 +171,32 @@ class Crawler:
                         }}
                     }}
                     """
-                response = requests.post(
-                    "https://api.github.com/graphql",
-                    headers=self.auth_header,
-                    json={"query": query},
-                )
-                data = response.json()
-                contributions_collection = data["data"]["user"][
-                    "contributionsCollection"
-                ]
+        response = requests.post(
+            "https://api.github.com/graphql",
+            headers=self.auth_header,
+            json={"query": query},
+        )
+        data = response.json()
+        return data["data"]["user"]["contributionsCollection"]
 
-                yearly_contributions = (
-                    contributions_collection["contributionCalendar"][
-                        "totalContributions"
-                    ]
-                    + contributions_collection["restrictedContributionsCount"]
-                )
-
-                contributions += yearly_contributions
-
-                self.logger.info(f"Successfully retrieved contributions for {year}")
+    def get_total_contributions(self):
+        contributions = 0
+        this_year = datetime.now().year
+        for year in range(2022, this_year + 1):
+            try:
+                contributions_collection = self._fetch_yearly_contributions(year)
 
             except requests.exceptions.RequestException as e:
                 self.logger.error(f"RequestException: {str(e)}")
-                return
+                continue
+
+            contributions += contributions_collection["contributionCalendar"][
+                "totalContributions"
+            ]
+
+            contributions += contributions_collection["restrictedContributionsCount"]
+
+            self.logger.info(f"Successfully retrieved contributions for {year}")
 
         with self.session as session:
             session.query(DBTotalContributions).delete()
