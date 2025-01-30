@@ -3,8 +3,6 @@ import dotenv
 import os
 import subprocess
 import logging
-from logging.handlers import SysLogHandler
-import platform
 from datetime import datetime
 from db.core import get_db
 from db.models import (
@@ -59,10 +57,7 @@ class Crawler:
         self.logger = logging.getLogger("CrawlerLogger")
         self.logger.setLevel(logging.INFO)
 
-        if platform.system() == "Linux":
-            handler = SysLogHandler(address="/dev/log")
-        else:
-            handler = logging.StreamHandler()
+        handler = logging.StreamHandler()
 
         formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
         handler.setFormatter(formatter)
