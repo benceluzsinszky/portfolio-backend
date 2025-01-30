@@ -308,6 +308,10 @@ class Crawler:
 
             self.logger.info(f"Successfully counted total lines for repository {i}")
 
+        if self.total_lines == 0:
+            self.logger.error("No lines found")
+            return
+
         with self.session as session:
             session.query(DBTotalLines).delete()
             total_lines = DBTotalLines(total_lines=self.total_lines)
